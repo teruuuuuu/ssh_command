@@ -20,5 +20,6 @@ Host ホスト2
 
 ホスト1のリモート端末でdateコマンドを実行する場合は以下のようになります。
 > java -cp JAR_PATH ホスト1 date
+
 dependencyまで含めたjarがssh_command_jarにある場合は以下のように実行できます。
-> java -cp "ssh_command_jar/*"  command.SshCommand ホスト コマンド
+> java -cp "ssh_command_jar/*"  command.SshCommand ホスト コマンド    
