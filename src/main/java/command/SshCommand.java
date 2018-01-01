@@ -3,56 +3,47 @@ package command;
 import config.LoadSshConfig;
 import config.SSHConfig;
 import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.common.IOUtils;
-import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
+import util.CommandOverSsh;
+import util.SshConnect;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class SshCommand {
+  String host;
+  String command;
 
-  public static void main(String... args) throws IOException{
-    Map<String, SSHConfig> sshConfigMap = new LoadSshConfig().loadConfig();
+  public SshCommand(String... args){
     String host = args[0];
     String command = "";
     for(int i=1; i < args.length; i++){
       command = command + " " + args[i];
     }
+    this.host = host;
+    this.command = command;
+  }
 
-
-    SSHConfig sshConfig = sshConfigMap.get(host);
-    SSHClient sshClient = sshKeyConnectSetting(host, sshConfig.getItentityFile(), sshConfig.getUser());
-    try {
-      sessionCommand(sshClient.startSession(), command, 5);
-    }finally {
-      sshClient.disconnect();
-    }
+  public static void main(String... args) throws IOException{
+    SshCommand command = new SshCommand(args);
+    command.run();
     return;
   }
 
-  private static SSHClient sshKeyConnectSetting(String host, String sshKeyFilePath, String username) throws IOException {
-    SSHClient ssh = new SSHClient();
-    ssh.loadKnownHosts();
-    ssh.connect(host);
-    // keepAliveの感覚設定
-    ssh.getConnection().getKeepAlive().setKeepAliveInterval(5);
-    // 接続時のsshキーの指定はauthPublickeyを認証時のパスワードにはauthPasswordを使う
-    KeyProvider keys = ssh.loadKeys(new File(sshKeyFilePath).getPath(), "");
-    ssh.authPublickey(username,keys);
-    return ssh;
-  }
-
-  private static void sessionCommand(Session session, String command, int timeout) throws IOException {
+  public void run(){
     try {
-      final Session.Command cmd = session.exec(command);
-      System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
-      cmd.join(timeout, TimeUnit.SECONDS);
-      System.out.println("\n** exit status: " + cmd.getExitStatus());
-    } finally {
-      session.close();
+      Map<String, SSHConfig> sshConfigMap = new LoadSshConfig().loadConfig();
+      SSHConfig sshConfig = sshConfigMap.get(host);
+      SSHClient sshClient = SshConnect.sshKeyConnectSetting(host, sshConfig.getItentityFile(), sshConfig.getUser());
+      System.out.println(CommandOverSsh.sessionCommand(sshClient.startSession(), command, 5));
+
+      try{
+        sshClient.disconnect();
+      }finally {
+        sshClient.disconnect();
+      }
+    }catch(IOException e){
+      e.printStackTrace();
     }
+    return;
   }
 }

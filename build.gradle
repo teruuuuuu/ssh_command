@@ -2,6 +2,8 @@ group 'teruuu'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'java-library-distribution'
 
 sourceCompatibility = 1.8
 
@@ -9,7 +11,8 @@ repositories {
     mavenCentral()
 }
 
-apply plugin: 'java'
+mainClassName = 'command.SshCommand'
+
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.2'
     compile group: 'com.hierynomus', name: 'sshj', version: '0.23.0'
@@ -22,11 +25,11 @@ sourceSets {
     main { resources { srcDirs = [ 'src/main/resources/' ] } }
 }
 
-//メインクラス指定
+distZip.shouldRunAfter(build)
 jar {
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    // exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
     manifest {
         attributes 'Main-Class': 'command.SshCommand'
     }
-//    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-//    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }
